@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  # ── Backend API ─────────────────────────────────────────
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./backend/storage:/app/storage
+    environment:
+      - DATABASE_URL=postgresql://cvstudio:cvstudio@db:5432/cvstudio
+      - REDIS_URL=redis://redis:6379/0
+      - STORAGE_PATH=/app/storage
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+      - redis
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── Celery Worker (DOCX + image processing) ─────────────
+  worker:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+      - ./backend/storage:/app/storage
+    environment:
+      - DATABASE_URL=postgresql://cvstudio:cvstudio@db:5432/cvstudio
+      - REDIS_URL=redis://redis:6379/0
+      - STORAGE_PATH=/app/storage
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+      - redis
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2
+
+  # ── Frontend Dev Server ──────────────────────────────────
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    command: sh -c "npm install && npm run dev -- --host"
+
+  # ── PostgreSQL ───────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cvstudio
+      POSTGRES_PASSWORD: cvstudio
+      POSTGRES_DB: cvstudio
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ── Redis (Celery broker + cache) ───────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:

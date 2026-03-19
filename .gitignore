@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.env.local
+.npm/
+
+# Env files (never commit real keys)
+.env
+backend/.env
+frontend/.env.local
+!**/.env.example
+
+# Storage (user-generated files)
+backend/storage/output/
+backend/storage/thumbnails/
+backend/storage/templates/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+celerybeat-schedule
